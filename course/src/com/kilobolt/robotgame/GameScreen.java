@@ -12,8 +12,11 @@ import com.kilobolt.framework.Graphics;
 import com.kilobolt.framework.Image;
 import com.kilobolt.framework.Input.TouchEvent;
 import com.kilobolt.framework.Screen;
+import com.kilobolt.robotgame.Snake.DirectionSnake;
 
 public class GameScreen extends Screen {
+	public static GameScreen instance;
+	
 	enum GameState {
 		Ready, Running, Paused, GameOver
 	}
@@ -25,10 +28,15 @@ public class GameScreen extends Screen {
 	private static Background bg1, bg2;
 	private static Robot robot;
 	public static Heliboy hb, hb2;
-
+	public static Snake snake; 
+	public static SnakeIA enemy;
+	private final float updateInterval = 1f;
+	private float updateTime = 0;
 	private Image currentSprite, character, character2, character3, heliboy,
-			heliboy2, heliboy3, heliboy4, heliboy5;
+	heliboy2, heliboy3, heliboy4, heliboy5, snakeImg, enemyImg;
 	private Animation anim, hanim;
+	public int[][] screen;
+	
 
 	private ArrayList<Tile> tilearray = new ArrayList<Tile>();
 
@@ -37,15 +45,41 @@ public class GameScreen extends Screen {
 
 	public GameScreen(Game game) {
 		super(game);
-
+		instance = this;
 		// Initialize game objects here
 
+		screen = new int[51][32];
+		
+		for(int i=0; i < screen.length; i++)
+		{
+			for(int j=0; j < screen[0].length; j++)
+			{
+				screen[i][j] = 0;
+			}
+		}
+		
 		bg1 = new Background(0, 0);
 		bg2 = new Background(2160, 0);
 		robot = new Robot();
 		hb = new Heliboy(340, 360);
 		hb2 = new Heliboy(700, 360);
 
+		snake = new Snake();
+		snake.idSnake = 1;
+		snake.SnakePosition(5, 5);
+
+		snake.human = true;
+		
+		enemy = new SnakeIA();
+		enemy.idSnake = 2;
+		enemy.SnakePosition(46, 27);
+
+		enemy.direction = DirectionSnake.LEFT;
+		enemy.moveLeft();
+		enemy.human = false;
+		
+		snakeImg = Assets.snakeImg;
+		enemyImg = Assets.snakeImg2;
 		character = Assets.character;
 		character2 = Assets.character2;
 		character3 = Assets.character3;
@@ -57,38 +91,13 @@ public class GameScreen extends Screen {
 		heliboy5 = Assets.heliboy5;
 
 		anim = new Animation();
-		anim.addFrame(character, 1250);
-		anim.addFrame(character2, 50);
-		anim.addFrame(character3, 50);
-		anim.addFrame(character2, 50);
-
 		hanim = new Animation();
-		hanim.addFrame(heliboy, 100);
-		hanim.addFrame(heliboy2, 100);
-		hanim.addFrame(heliboy3, 100);
-		hanim.addFrame(heliboy4, 100);
-		hanim.addFrame(heliboy5, 100);
-		hanim.addFrame(heliboy4, 100);
-		hanim.addFrame(heliboy3, 100);
-		hanim.addFrame(heliboy2, 100);
-
-		currentSprite = anim.getImage();
 
 		loadMap();
 
 		// Defining a paint object
 		paint = new Paint();
-		paint.setTextSize(30);
-		paint.setTextAlign(Paint.Align.CENTER);
-		paint.setAntiAlias(true);
-		paint.setColor(Color.WHITE);
-
 		paint2 = new Paint();
-		paint2.setTextSize(100);
-		paint2.setTextAlign(Paint.Align.CENTER);
-		paint2.setAntiAlias(true);
-		paint2.setColor(Color.WHITE);
-
 	}
 
 	private void loadMap() {
@@ -122,12 +131,35 @@ public class GameScreen extends Screen {
 					Tile t = new Tile(i, j, Character.getNumericValue(ch));
 					tilearray.add(t);
 				}
-
 			}
 		}
-
 	}
 
+	public void setPositionSnake(int snakeId, int x, int y)
+	{
+		if(x > 50 || y > 31 || x < 0 || y < 0) //Saiu do cenário
+		{
+			state = GameState.GameOver;
+			return;
+		}
+		
+		if(screen[x][y] == 0)//esta vazio
+		{
+			screen[x][y] = snakeId;
+		}
+		else if(screen[x][y] == snakeId)//batem nela mesma
+		{
+			state = GameState.GameOver;
+		}
+		else if(screen[x][y] != 0) //bateu em outra coisa
+		{
+			state = GameState.GameOver;
+		}
+	}
+	
+
+	//METODO QUE GERENCIA QUAL UPDATE DEVE SER CHAMADO COMO POR EXEMPLO O DO INGAME
+	// O DO GAME OVER, PAUSE OU TELA INICIAL
 	@Override
 	public void update(float deltaTime) {
 		List<TouchEvent> touchEvents = game.getInput().getTouchEvents();
@@ -160,106 +192,37 @@ public class GameScreen extends Screen {
 
 	private void updateRunning(List<TouchEvent> touchEvents, float deltaTime) {
 
-		// This is identical to the update() method from our Unit 2/3 game.
-		//INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS
-		//INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS
-		//INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS
-		//INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS
-		//INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS
-		//INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS
-		//INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS
-		//INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS
-		//INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS
-		//INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS INPUTS  INPUTS INPUTS
-		// 1. All touch input is handled here:
+		updateTime += deltaTime*0.1f;
+		if(updateTime >= updateInterval)
+		{
+			snake.move();
+			enemy.Think();
+			updateTime = 0;
+		}
+		
+		//1. All touch input is handled here:
 		int len = touchEvents.size();
-		for (int i = 0; i < len; i++) {
+		for (int i = 0; i < len; i++) 
+		{
 			TouchEvent event = touchEvents.get(i);
-			if (event.type == TouchEvent.TOUCH_DOWN) {
-
-				if (inBounds(event, 0, 285, 65, 65)) {
-					robot.jump();
-					currentSprite = anim.getImage();
-					robot.setDucked(false);
+			if (event.type == TouchEvent.TOUCH_DOWN) 
+			{
+				if (inBounds(event, 65, 285, 65, 65)) {
+					snake.moveUp();
 				}
 
 				else if (inBounds(event, 0, 350, 65, 65)) {
-
-					if (robot.isDucked() == false && robot.isJumped() == false
-							&& robot.isReadyToFire()) {
-						robot.shoot();
-					}
+					snake.moveLeft();
 				}
 
-				else if (inBounds(event, 0, 415, 65, 65)
-						&& robot.isJumped() == false) {
-					currentSprite = Assets.characterDown;
-					robot.setDucked(true);
-					robot.setSpeedX(0);
+				else if (inBounds(event, 65, 415, 65, 65)){
+					snake.moveDown();
 
 				}
+				else if (inBounds(event, 130, 350, 65, 65)){
 
-				if (event.x > 400) {
-					// Move right.
-					robot.moveRight();
-					robot.setMovingRight(true);
-
+					snake.moveRight();
 				}
-
-			}
-
-			if (event.type == TouchEvent.TOUCH_UP) {
-
-				if (inBounds(event, 0, 415, 65, 65)) {
-					currentSprite = anim.getImage();
-					robot.setDucked(false);
-
-				}
-
-				if (inBounds(event, 0, 0, 35, 35)) {
-					pause();
-
-				}
-
-				if (event.x > 400) {
-					// Move right.
-					robot.stopRight();
-				}
-			}
-
-		}
-		
-		//FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS
-		//FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS
-		//FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS
-		//FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS
-		//FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS
-		//FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS
-		//FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS FIM DAS INPUTS
-
-		// 2. Check miscellaneous events like death:
-
-		if (livesLeft == 0) {
-			state = GameState.GameOver;
-		}
-
-		// 3. Call individual update() methods here.
-		// This is where all the game updates happen.
-		// For example, robot.update();
-		robot.update();
-		if (robot.isJumped()) {
-			currentSprite = Assets.characterJump;
-		} else if (robot.isJumped() == false && robot.isDucked() == false) {
-			currentSprite = anim.getImage();
-		}
-
-		ArrayList projectiles = robot.getProjectiles();
-		for (int i = 0; i < projectiles.size(); i++) {
-			Projectile p = (Projectile) projectiles.get(i);
-			if (p.isVisible() == true) {
-				p.update();
-			} else {
-				projectiles.remove(i);
 			}
 		}
 
@@ -270,11 +233,8 @@ public class GameScreen extends Screen {
 		bg2.update();
 		animate();
 
-		if (robot.getCenterY() > 500) {
-			state = GameState.GameOver;
-		}
 	}
-
+	//METODO QUE VERIFICA SE A POSIÇÃO DO EVENTO PASSADO ESTA CONTINDO NO OBJETO
 	private boolean inBounds(TouchEvent event, int x, int y, int width,
 			int height) {
 		if (event.x > x && event.x < x + width - 1 && event.y > y
@@ -284,6 +244,7 @@ public class GameScreen extends Screen {
 			return false;
 	}
 
+	// METODO QUE FICA ESCUTANDO OS EVENTOS DA TELA DE PAUSE
 	private void updatePaused(List<TouchEvent> touchEvents) {
 		int len = touchEvents.size();
 		for (int i = 0; i < len; i++) {
@@ -303,13 +264,13 @@ public class GameScreen extends Screen {
 			}
 		}
 	}
-
+	//METODO QUE FICA ESCUTANDO OS EVENTOS DA TELA DE GAME OVER
 	private void updateGameOver(List<TouchEvent> touchEvents) {
 		int len = touchEvents.size();
 		for (int i = 0; i < len; i++) {
 			TouchEvent event = touchEvents.get(i);
 			if (event.type == TouchEvent.TOUCH_DOWN) {
-				if (inBounds(event, 0, 0, 800, 480)) {
+				if (inBounds(event, 0, 0, 1280, 720)) {
 					nullify();
 					game.setScreen(new MainMenuScreen(game));
 					return;
@@ -332,27 +293,20 @@ public class GameScreen extends Screen {
 	public void paint(float deltaTime) {
 		Graphics g = game.getGraphics();
 
-		g.drawImage(Assets.background, bg1.getBgX(), bg1.getBgY());
-		g.drawImage(Assets.background, bg2.getBgX(), bg2.getBgY());
-		paintTiles(g);
-
-		ArrayList projectiles = robot.getProjectiles();
-		for (int i = 0; i < projectiles.size(); i++) {
-			Projectile p = (Projectile) projectiles.get(i);
-			g.drawRect(p.getX(), p.getY(), 10, 5, Color.YELLOW);
+		for(int i=0; i < screen.length;i++)
+		{
+			for(int j=0; j < screen[0].length; j++)
+			{
+				if(screen[i][j] == 1)
+				{
+					g.drawImage(snakeImg, i*15 , j*15);
+				}
+				if(screen[i][j] == 2)
+				{
+					g.drawImage(enemyImg, i*15 , j*15);
+				}
+			}
 		}
-		// First draw the game elements.
-
-		g.drawImage(currentSprite, robot.getCenterX() - 61,
-				robot.getCenterY() - 63);
-		g.drawImage(hanim.getImage(), hb.getCenterX() - 48,
-				hb.getCenterY() - 48);
-		g.drawImage(hanim.getImage(), hb2.getCenterX() - 48,
-				hb2.getCenterY() - 48);
-
-		// Example:
-		// g.drawImage(Assets.background, 0, 0);
-		// g.drawImage(Assets.character, characterX, characterY);
 
 		// Secondly, draw the UI above the game elements.
 		if (state == GameState.Ready)
@@ -414,17 +368,28 @@ public class GameScreen extends Screen {
 		g.drawString("Tap to Start.", 400, 240, paint);
 
 	}
+	//ADICIONA A IMAGEM DOS BOTOES IN GAME NA TELA (UTILIZA ATLAS)
+	Graphics gDown;
+	Graphics gLeft;
+	Graphics gRight;
+	Graphics gUp;
 
 	private void drawRunningUI() {
 		Graphics g = game.getGraphics();
-		g.drawImage(Assets.button, 65, 285, 0, 0, 65, 65);
-		g.drawImage(Assets.button, 0, 350, 0, 65, 65, 65);
-		g.drawImage(Assets.button, 130, 350, 0, 65, 65, 65);
-		g.drawImage(Assets.button, 65, 415, 0, 130, 65, 65);
-		g.drawImage(Assets.button, 0, 0, 0, 195, 35, 35);
+		gDown  = game.getGraphics();
+		gLeft  = game.getGraphics();
+		gRight = game.getGraphics();
+		gUp    = game.getGraphics();
 
+		gDown.drawImage(Assets.button, 65, 285, 0, 0, 65, 65);//baixo
+		gLeft.drawImage(Assets.button, 0, 350, 0, 65, 65, 65);//esquerda
+		gRight.drawImage(Assets.button, 130, 350, 0, 65, 65, 65);//direita
+		gUp.drawImage(Assets.button, 65, 415, 0, 130, 65, 65);//cima
+
+		g.drawImage(Assets.button, 0, 0, 0, 195, 35, 35);
 	}
 
+	//MOSTRA OS BOTOES DA TELA DE PAUSE
 	private void drawPausedUI() {
 		Graphics g = game.getGraphics();
 		// Darken the entire screen so you can display the Paused screen.
@@ -433,20 +398,20 @@ public class GameScreen extends Screen {
 		g.drawString("Menu", 400, 360, paint2);
 
 	}
-
+	//MOSTRA OS BOTOES DA TELA DE GAMEOVER
 	private void drawGameOverUI() {
 		Graphics g = game.getGraphics();
-		g.drawRect(0, 0, 1281, 801, Color.BLACK);
+		g.drawRect(0, 0, 1281, 801, Color.WHITE);
 		g.drawString("GAME OVER.", 400, 240, paint2);
 		g.drawString("Tap to return.", 400, 290, paint);
 
 	}
 
+	//MUDA ESTADOS DA QUE VAO GERENCIAR QUAL TELA ESTA SELECIONADA
 	@Override
 	public void pause() {
 		if (state == GameState.Running)
 			state = GameState.Paused;
-
 	}
 
 	@Override

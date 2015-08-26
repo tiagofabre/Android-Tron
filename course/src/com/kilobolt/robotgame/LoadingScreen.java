@@ -38,6 +38,8 @@ public class LoadingScreen extends Screen {
 		Assets.tilegrassRight = g.newImage("tilegrassright.png", ImageFormat.RGB565);
 		
 		Assets.button = g.newImage("button.jpg", ImageFormat.RGB565);
+		Assets.snakeImg = g.newImage("snake.png", ImageFormat.RGB565);
+		Assets.snakeImg2 = g.newImage("snake2.png", ImageFormat.RGB565);
 
 		//This is how you would load a sound if you had one.
 		//Assets.click = game.getAudio().createSound("explode.ogg");
