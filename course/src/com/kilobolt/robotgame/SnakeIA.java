@@ -5,52 +5,48 @@ import com.kilobolt.robotgame.GameScreen.GameState;
 public class SnakeIA extends Snake{
 
 	int randomNum;
-	public final int stepsToThink = 5;
+	public final int stepsToThink = 10;
 	private int currentStep;
+	private boolean thinked;
+	
 	public void Think()
 	{
 		currentStep++;
-		if(currentStep > stepsToThink)
-		{
-			RandomDirection();
-		}
-		
-		
+		thinked = false;
 		//verifica se vai para fora da tela
-		if(currentPositionX+1 > 50
-				&& direction == DirectionSnake.RIGHT)//direita
+		if(currentPositionX+1 > 50 && direction == DirectionSnake.RIGHT)//direita
 		{
 			if(currentPositionY == 0)
 				direction = DirectionSnake.DOWN;
-			else if(currentPositionY == 30)
+			else if(currentPositionY == 31)
 				direction = DirectionSnake.UP;
 			else
 			{
 				centerBorder();
+				
 				return;
 			}
 			move();
 			return;
 		}
 		
-		else if(currentPositionX-1 < 0 
-				&& direction == DirectionSnake.LEFT)//esquerda
+		else if(currentPositionX-1 < 0 && direction == DirectionSnake.LEFT)//esquerda
 		{
 			if(currentPositionY == 0)
 				direction = DirectionSnake.DOWN;
-			else if(currentPositionY == 30)
+			else if(currentPositionY == 31)
 				direction = DirectionSnake.UP;
 			else
 			{
 				centerBorder();
+				
 				return;
 			}
 			move();
 			return;
 		}
 		
-		else if(currentPositionY-1 < 0
-				&& direction == DirectionSnake.UP)//cima
+		else if(currentPositionY-1 < 0 && direction == DirectionSnake.UP)//cima
 		{
 			if(currentPositionX == 50)
 				direction = DirectionSnake.LEFT;
@@ -59,14 +55,14 @@ public class SnakeIA extends Snake{
 			else
 			{
 				centerBorder();
+				
 				return;
 			}
 			move();
 			return;
 		}
 		
-		else if(currentPositionY > 30 
-				&& direction == DirectionSnake.DOWN)//baixo
+		else if(currentPositionY+1 > 31 && direction == DirectionSnake.DOWN)//baixo
 		{
 			if(currentPositionX == 50)
 				direction = DirectionSnake.LEFT;
@@ -75,6 +71,7 @@ public class SnakeIA extends Snake{
 			else
 			{
 				centerBorder();
+				
 				return;
 			}
 			move();
@@ -82,34 +79,64 @@ public class SnakeIA extends Snake{
 		}
 
 		// verifica se vai se comer
-		if(GameScreen.instance.screen[currentPositionX+1][currentPositionY]  == idSnake
-				&& direction == DirectionSnake.RIGHT)//direita
+		if(direction == DirectionSnake.RIGHT)//direita
 		{
-			DecisionUpDown();
+			if(GameScreen.instance.screen[currentPositionX+1][currentPositionY]  == idSnake)
+			{
+				if(GameScreen.instance.screen[currentPositionX][currentPositionY+1]  == idSnake)
+					direction = DirectionSnake.UP;
+				else
+					direction = DirectionSnake.DOWN;
+				
+				thinked = true;
+			}
 		}
-		
-		else if(GameScreen.instance.screen[currentPositionX-1][currentPositionY]  == idSnake
-				&& direction == DirectionSnake.LEFT)//esquerda
+		if(direction == DirectionSnake.LEFT)//esquerda
 		{
-			DecisionUpDown();
+			if(GameScreen.instance.screen[currentPositionX-1][currentPositionY]  == idSnake)
+			{
+				if(GameScreen.instance.screen[currentPositionX][currentPositionY+1]  == idSnake)
+					direction = DirectionSnake.UP;
+				else
+					direction = DirectionSnake.DOWN;
+				
+				thinked = true;
+			}
 		}
-		
-		else if(GameScreen.instance.screen[currentPositionX][currentPositionY-1]  == idSnake
-				&& direction == DirectionSnake.UP)//cima
+		if(direction == DirectionSnake.UP)//cima
 		{
-			DecisionLeftRight();
+			if(GameScreen.instance.screen[currentPositionX][currentPositionY-1]  == idSnake)
+			{
+				if(GameScreen.instance.screen[currentPositionX+1][currentPositionY]  == idSnake)
+					direction = DirectionSnake.LEFT;
+				else
+					direction = DirectionSnake.RIGHT;
+				
+				thinked = true;
+			}
 		}
-		
-		else if(GameScreen.instance.screen[currentPositionX][currentPositionY+1]  == idSnake
-				&& direction == DirectionSnake.DOWN)//baixo
+		if(direction == DirectionSnake.DOWN)//baixo
 		{
-			DecisionLeftRight();
+			if(GameScreen.instance.screen[currentPositionX][currentPositionY+1]  == idSnake)
+			{
+				if(GameScreen.instance.screen[currentPositionX+1][currentPositionY]  == idSnake)
+					direction = DirectionSnake.LEFT;
+				else
+					direction = DirectionSnake.RIGHT;
+				
+				thinked = true;
+			}
 		}
-		
-		
-		
-	
+
 		move();
+		
+		if(thinked)
+			return;
+		
+		if(currentStep > stepsToThink)
+		{
+			RandomDirection();
+		}
 	}
 	
 	private void RandomDirection()
@@ -120,28 +147,81 @@ public class SnakeIA extends Snake{
 		if(randomNum%5 == 0)
 		{
 			if(direction != DirectionSnake.LEFT)
+			{
+				if(currentPositionX+1 > 50)
+				{
+					RandomDirection();
+					return;
+				}
+				if(GameScreen.instance.screen[currentPositionX+1][currentPositionY]  == idSnake)
+				{
+					RandomDirection();
+					return;
+				}
+			
 				direction = DirectionSnake.RIGHT;
+			}
 			else
+			{
 				RandomDirection();
+			}
 		}
 		else if(randomNum%4 == 0)
 		{
 			if(direction != DirectionSnake.RIGHT)
+			{
+				if(currentPositionX-1 < 0)
+				{
+					RandomDirection();
+					return;
+				}
+				if(GameScreen.instance.screen[currentPositionX-1][currentPositionY]  == idSnake)
+				{
+					RandomDirection();
+					return;
+				}
+			
 				direction = DirectionSnake.LEFT;
+			}
 			else
 				RandomDirection();
 		}
 		else if(randomNum%3 == 0)
 		{
 			if(direction != DirectionSnake.UP)
+			{
+				if(currentPositionY+1 < 0)
+				{
+					RandomDirection();
+					return;
+				}
+				if(GameScreen.instance.screen[currentPositionX+1][currentPositionY]  == idSnake)
+				{
+					RandomDirection();
+					return;
+				}
+				
 				direction = DirectionSnake.DOWN;
+			}
 			else
 				RandomDirection();
 		}
 		else if (randomNum%2 == 0) {
 		
 			if(direction != DirectionSnake.DOWN)
+			{
+				if(currentPositionX-1 < 0)
+				{
+					RandomDirection();
+					return;
+				}
+				if(GameScreen.instance.screen[currentPositionX-1][currentPositionY]  == idSnake)
+				{
+					RandomDirection();
+					return;
+				}
 				direction = DirectionSnake.UP;
+			}
 			else
 				RandomDirection();
 		}
@@ -149,25 +229,25 @@ public class SnakeIA extends Snake{
 	
 	private void centerBorder()
 	{
-		if(GameScreen.instance.enemy.x[0]+velocity > 750
+		if(currentPositionX+1 > 50
 				&& direction == DirectionSnake.RIGHT)//direita
 		{
 			DecisionUpDown();
 		}
 		
-		else if(GameScreen.instance.enemy.x[0]-velocity < 0 
+		else if(currentPositionX-1 < 0 
 				&& direction == DirectionSnake.LEFT)//esquerda
 		{
 			DecisionUpDown();
 		}
 		
-		else if(GameScreen.instance.enemy.y[0]-velocity < 0
+		else if(currentPositionY-1 < 0
 				&& direction == DirectionSnake.UP)//cima
 		{
 			DecisionLeftRight();
 		}
 		
-		else if(GameScreen.instance.enemy.y[0]+velocity > 480 
+		else if(currentPositionY+1 > 31 
 				&& direction == DirectionSnake.DOWN)//baixo
 		{
 			DecisionLeftRight();

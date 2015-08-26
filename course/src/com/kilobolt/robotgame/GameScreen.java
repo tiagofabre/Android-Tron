@@ -25,8 +25,8 @@ public class GameScreen extends Screen {
 
 	// Variable Setup
 
-	private static Background bg1, bg2;
-	private static Robot robot;
+	private static Background bg1, bg2;	//imgem de fundo
+	//private static Robot robot;
 	public static Heliboy hb, hb2;
 	public static Snake snake; 
 	public static SnakeIA enemy;
@@ -37,18 +37,19 @@ public class GameScreen extends Screen {
 	private Animation anim, hanim;
 	public int[][] screen;
 	
-
+	public int winner;	//identificador do vencedor
+	
 	private ArrayList<Tile> tilearray = new ArrayList<Tile>();
 
 	int livesLeft = 1;
-	Paint paint, paint2;
+	Paint paint, paint2 , paint3;
 
 	public GameScreen(Game game) {
 		super(game);
 		instance = this;
 		// Initialize game objects here
 
-		screen = new int[51][32];
+		screen = new int[52][33];
 		
 		for(int i=0; i < screen.length; i++)
 		{
@@ -60,7 +61,7 @@ public class GameScreen extends Screen {
 		
 		bg1 = new Background(0, 0);
 		bg2 = new Background(2160, 0);
-		robot = new Robot();
+		
 		hb = new Heliboy(340, 360);
 		hb2 = new Heliboy(700, 360);
 
@@ -72,7 +73,7 @@ public class GameScreen extends Screen {
 		
 		enemy = new SnakeIA();
 		enemy.idSnake = 2;
-		enemy.SnakePosition(46, 27);
+		enemy.SnakePosition(46, 15);
 
 		enemy.direction = DirectionSnake.LEFT;
 		enemy.moveLeft();
@@ -98,6 +99,7 @@ public class GameScreen extends Screen {
 		// Defining a paint object
 		paint = new Paint();
 		paint2 = new Paint();
+		paint3 = new Paint();
 	}
 
 	private void loadMap() {
@@ -150,10 +152,12 @@ public class GameScreen extends Screen {
 		else if(screen[x][y] == snakeId)//batem nela mesma
 		{
 			state = GameState.GameOver;
+			winner = snakeId;
 		}
 		else if(screen[x][y] != 0) //bateu em outra coisa
 		{
 			state = GameState.GameOver;
+			winner = snakeId;
 		}
 	}
 	
@@ -307,7 +311,22 @@ public class GameScreen extends Screen {
 				}
 			}
 		}
-
+		
+		
+		for(int i=0; i <= screen.length+1; i++)
+		{
+			if(i == 0 || i == screen.length)
+				g.drawLine(15*i, 0, 15*i, 1280, Color.RED);
+		}
+		for(int i=0; i < screen[0].length+1; i++)
+		{
+			if(i == screen[0].length)
+				g.drawLine(0, 15*i-1, 1280, 15*i, Color.RED);
+		}
+		
+		g.drawLine(0, 0, 1280, 0, Color.RED);
+		
+		
 		// Secondly, draw the UI above the game elements.
 		if (state == GameState.Ready)
 			drawReadyUI();
@@ -341,7 +360,7 @@ public class GameScreen extends Screen {
 		paint = null;
 		bg1 = null;
 		bg2 = null;
-		robot = null;
+		
 		hb = null;
 		hb2 = null;
 		currentSprite = null;
@@ -385,8 +404,6 @@ public class GameScreen extends Screen {
 		gLeft.drawImage(Assets.button, 0, 350, 0, 65, 65, 65);//esquerda
 		gRight.drawImage(Assets.button, 130, 350, 0, 65, 65, 65);//direita
 		gUp.drawImage(Assets.button, 65, 415, 0, 130, 65, 65);//cima
-
-		g.drawImage(Assets.button, 0, 0, 0, 195, 35, 35);
 	}
 
 	//MOSTRA OS BOTOES DA TELA DE PAUSE
@@ -403,8 +420,14 @@ public class GameScreen extends Screen {
 		Graphics g = game.getGraphics();
 		g.drawRect(0, 0, 1281, 801, Color.WHITE);
 		g.drawString("GAME OVER.", 400, 240, paint2);
-		g.drawString("Tap to return.", 400, 290, paint);
-
+		String gameoverString;
+		if(winner == 1)
+			gameoverString = "VOCÊ PERDEU";
+		else
+			gameoverString = "VOCÊ GANHOU";
+		g.drawString(gameoverString, 400, 290, paint3);
+		
+		g.drawString("Tap to return.", 400, 320, paint);
 	}
 
 	//MUDA ESTADOS DA QUE VAO GERENCIAR QUAL TELA ESTA SELECIONADA
@@ -446,9 +469,6 @@ public class GameScreen extends Screen {
 		return bg2;
 	}
 
-	public static Robot getRobot() {
-		// TODO Auto-generated method stub
-		return robot;
-	}
+
 
 }

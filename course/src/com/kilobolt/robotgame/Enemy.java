@@ -7,7 +7,6 @@ public class Enemy {
 
 	private int power, centerX, speedX, centerY;
 	private Background bg = GameScreen.getBg1();
-	private Robot robot = GameScreen.getRobot();
 
 	public Rect r = new Rect(0, 0, 0, 0);
 	public int health = 5;
@@ -36,23 +35,6 @@ public class Enemy {
 	}
 
 	public void follow() {
-		
-		if (centerX < -95 || centerX > 810){
-			movementSpeed = 0;
-		}
-
-		else if (Math.abs(robot.getCenterX() - centerX) < 5) {
-			movementSpeed = 0;
-		}
-
-		else {
-
-			if (robot.getCenterX() >= centerX) {
-				movementSpeed = 1;
-			} else {
-				movementSpeed = -1;
-			}
-		}
 
 	}
 
